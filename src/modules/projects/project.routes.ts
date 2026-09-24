@@ -33,6 +33,12 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
   );
 
   app.get(
+    '/projects/:projectId/export',
+    { preHandler: [requireAuth, canRead] },
+    projectController.exportProject.bind(projectController),
+  );
+
+  app.get(
     '/projects/:projectId/edit',
     { preHandler: [requireAuth, canWrite] },
     projectController.showEditForm.bind(projectController),

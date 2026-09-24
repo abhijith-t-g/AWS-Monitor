@@ -158,6 +158,41 @@ export class ProjectController {
     }
     return reply.redirect('/projects');
   }
+
+  async exportProject(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
+    const paramsResult = projectIdSchema.safeParse(request.params);
+    if (!paramsResult.success) throw new ValidationError('Invalid project ID');
+
+    const query = request.query as Record<string, string>;
+    const defaultEnd = new Date();
+    const defaultStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const startDate = query['startDate'] ? new Date(query['startDate']) : defaultStart;
+    const endDate = query['endDate'] ? new Date(query['endDate']) : defaultEnd;
+
+    const { buffer, filename } = await projectService.exportProjectExcel(
+      paramsResult.data.projectId,
+      startDate,
+      endDate,
+    );
+
+    // Audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: request.user!.id,
+        action: 'project.export_excel',
+        target: 'Project',
+        targetId: paramsResult.data.projectId,
+        ipAddress: request.ip,
+        metadata: { filename, startDate: startDate.toISOString(), endDate: endDate.toISOString() },
+      },
+    });
+
+    return reply
+      .header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+      .header('Content-Disposition', `attachment; filename="${filename}"`)
+      .send(buffer);
+  }
 }
 
 export const projectController = new ProjectController();

@@ -38,6 +38,13 @@ export class ProjectRepository {
       include: {
         resources: {
           where: { active: true },
+          include: {
+            metricSnapshots: {
+              orderBy: { timestamp: 'desc' },
+              take: 1,
+            },
+            _count: { select: { metricSnapshots: true } },
+          },
           orderBy: { name: 'asc' },
         },
         _count: { select: { resources: true } },
