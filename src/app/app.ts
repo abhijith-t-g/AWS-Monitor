@@ -89,7 +89,7 @@ async function registerPlugins(app: FastifyInstance): Promise<void> {
         ],
         fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
         imgSrc: ["'self'", 'data:', 'blob:'],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://unpkg.com'],
       },
     },
     crossOriginEmbedderPolicy: false,

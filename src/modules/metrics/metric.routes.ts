@@ -38,6 +38,7 @@ export async function metricRoutes(app: FastifyInstance): Promise<void> {
       if (request.headers['hx-request']) {
         return reply.view('metrics/partials/charts.ejs', {
           chartData: JSON.stringify(chartData),
+          snapshots,
           hours,
         });
       }
