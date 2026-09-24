@@ -1,0 +1,96 @@
+<!-- Project Detail Page -->
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <div class="flex items-center gap-2 text-xs text-slate-500 mb-2">
+        <a href="/projects" class="hover:text-slate-300 transition-colors">Projects</a>
+        <span>›</span>
+        <span class="text-slate-300"><%= project.name %></span>
+      </div>
+      <h2 class="text-xl font-bold text-slate-100"><%= project.name %></h2>
+      <% if (project.description) { %>
+        <p class="text-slate-400 text-sm mt-1"><%= project.description %></p>
+      <% } %>
+      <% if (project.awsAccountId) { %>
+        <span class="inline-flex items-center gap-1 mt-2 text-xs text-slate-400 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+          </svg>
+          AWS Account: <span class="font-mono"><%= project.awsAccountId %></span>
+        </span>
+      <% } %>
+    </div>
+    <div class="flex gap-2">
+      <a href="/projects/<%= project.id %>/resources/new"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Add Resource
+      </a>
+      <a href="/projects/<%= project.id %>/edit"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 text-sm transition-colors">
+        Edit
+      </a>
+    </div>
+  </div>
+
+  <!-- Resources Table -->
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl">
+    <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+      <h3 class="text-sm font-semibold text-slate-200">AWS Resources (<%= project.resources.length %>)</h3>
+    </div>
+
+    <% if (project.resources.length === 0) { %>
+      <div class="flex flex-col items-center justify-center py-16 text-center">
+        <svg class="w-12 h-12 text-slate-700 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+        </svg>
+        <p class="text-slate-500 text-sm">No resources added yet</p>
+        <a href="/projects/<%= project.id %>/resources/new"
+           class="mt-3 text-brand-400 hover:text-brand-300 text-sm">Add your first resource →</a>
+      </div>
+    <% } else { %>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-slate-800">
+            <th class="text-left px-6 py-3 text-xs font-medium text-slate-400 uppercase tracking-wide">Resource</th>
+            <th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wide">Type</th>
+            <th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wide">Region</th>
+            <th class="text-center px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wide">Snapshots</th>
+            <th class="text-right px-6 py-3 text-xs font-medium text-slate-400 uppercase tracking-wide">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800">
+          <% project.resources.forEach(function(resource) { %>
+            <tr class="hover:bg-slate-800/40 transition-colors">
+              <td class="px-6 py-4">
+                <a href="/projects/<%= project.id %>/resources/<%= resource.id %>"
+                   class="font-medium text-slate-100 hover:text-brand-400 transition-colors">
+                  <%= resource.name %>
+                </a>
+                <div class="text-xs text-slate-500 font-mono mt-0.5"><%= resource.awsResourceId %></div>
+              </td>
+              <td class="px-4 py-4">
+                <span class="px-2 py-0.5 rounded text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
+                  <%= resource.resourceType.replace(/_/g, ' ') %>
+                </span>
+              </td>
+              <td class="px-4 py-4 text-slate-400 font-mono text-xs"><%= resource.region %></td>
+              <td class="px-4 py-4 text-center text-slate-300"><%= resource._count.metricSnapshots %></td>
+              <td class="px-6 py-4 text-right">
+                <a href="/projects/<%= project.id %>/resources/<%= resource.id %>"
+                   class="px-3 py-1.5 rounded-lg text-xs text-brand-400 border border-brand-600/30 hover:bg-brand-600/10 transition-colors">
+                  Metrics
+                </a>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</div>

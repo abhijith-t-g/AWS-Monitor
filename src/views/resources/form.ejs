@@ -1,0 +1,82 @@
+<!-- Resource Add Form -->
+<div class="max-w-2xl">
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8">
+    <h2 class="text-lg font-semibold text-slate-100 mb-6">Add AWS Resource</h2>
+
+    <form method="POST" action="/projects/<%= projectId %>/resources">
+      <div class="space-y-5">
+
+        <div>
+          <label for="name" class="block text-sm font-medium text-slate-300 mb-1.5">Display Name <span class="text-red-400">*</span></label>
+          <input id="name" type="text" name="name" required maxlength="100"
+                 placeholder="e.g. Production API Server"
+                 class="w-full px-4 py-2.5 rounded-xl bg-slate-800 border <%= errors && errors.name ? 'border-red-500' : 'border-slate-700' %>
+                        text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm transition-all">
+          <% if (errors && errors.name) { %><p class="mt-1 text-xs text-red-400"><%= errors.name[0] %></p><% } %>
+        </div>
+
+        <div>
+          <label for="awsResourceId" class="block text-sm font-medium text-slate-300 mb-1.5">AWS Resource ID <span class="text-red-400">*</span></label>
+          <input id="awsResourceId" type="text" name="awsResourceId" required
+                 placeholder="e.g. i-0abc123def456789"
+                 class="w-full px-4 py-2.5 rounded-xl bg-slate-800 border <%= errors && errors.awsResourceId ? 'border-red-500' : 'border-slate-700' %>
+                        text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-mono transition-all">
+          <% if (errors && errors.awsResourceId) { %><p class="mt-1 text-xs text-red-400"><%= errors.awsResourceId[0] %></p><% } %>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="resourceType" class="block text-sm font-medium text-slate-300 mb-1.5">Resource Type <span class="text-red-400">*</span></label>
+            <select id="resourceType" name="resourceType" required
+                    class="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100
+                           focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm transition-all">
+              <% resourceTypes.forEach(function(type) { %>
+                <option value="<%= type %>"><%= type.replace(/_/g, ' ') %></option>
+              <% }); %>
+            </select>
+          </div>
+
+          <div>
+            <label for="region" class="block text-sm font-medium text-slate-300 mb-1.5">AWS Region <span class="text-red-400">*</span></label>
+            <input id="region" type="text" name="region" required
+                   placeholder="e.g. us-east-1"
+                   class="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100
+                          placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm font-mono transition-all">
+          </div>
+        </div>
+
+        <div>
+          <label for="description" class="block text-sm font-medium text-slate-300 mb-1.5">Description</label>
+          <textarea id="description" name="description" rows="2"
+                    class="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-100
+                           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm resize-none"
+                    placeholder="Optional description"></textarea>
+        </div>
+      </div>
+
+      <!-- CloudWatch Agent notice -->
+      <div class="mt-5 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 text-xs text-amber-400 flex gap-3">
+        <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div>
+          <strong>Note:</strong> CPU and Network metrics are collected automatically.
+          Memory and Disk metrics require the <strong>CloudWatch Agent</strong> to be installed on EC2 instances.
+          If unavailable, those metrics will be recorded as N/A.
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 mt-6">
+        <button type="submit"
+                class="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm transition-colors shadow-lg shadow-brand-900/30 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          Add Resource
+        </button>
+        <a href="/projects/<%= projectId %>"
+           class="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 text-sm transition-colors">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>

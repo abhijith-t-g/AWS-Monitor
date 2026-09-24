@@ -1,0 +1,62 @@
+<!-- Resource Metrics Detail Page -->
+<div class="space-y-6">
+
+  <!-- Breadcrumb + Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <div class="flex items-center gap-2 text-xs text-slate-500 mb-2">
+        <a href="/projects" class="hover:text-slate-300">Projects</a>
+        <span>›</span>
+        <a href="/projects/<%= resource.project.id %>" class="hover:text-slate-300"><%= resource.project.name %></a>
+        <span>›</span>
+        <span class="text-slate-300"><%= resource.name %></span>
+      </div>
+      <h2 class="text-xl font-bold text-slate-100"><%= resource.name %></h2>
+      <div class="flex items-center gap-3 mt-1">
+        <span class="font-mono text-sm text-slate-400"><%= resource.awsResourceId %></span>
+        <span class="text-slate-600">·</span>
+        <span class="text-sm text-slate-400"><%= resource.region %></span>
+        <span class="text-slate-600">·</span>
+        <span class="px-2 py-0.5 rounded text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
+          <%= resource.resourceType.replace(/_/g, ' ') %>
+        </span>
+      </div>
+    </div>
+    <a href="/reports/new" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      Export Report
+    </a>
+  </div>
+
+  <!-- Time Range Selector (HTMX) -->
+  <div class="flex items-center gap-2">
+    <span class="text-sm text-slate-400">Show:</span>
+    <% [1, 6, 24, 72, 168].forEach(function(h) { %>
+      <button
+        hx-get="/projects/<%= resource.project.id %>/resources/<%= resource.id %>/metrics?hours=<%= h %>"
+        hx-target="#charts-container"
+        hx-indicator=".htmx-indicator"
+        class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-slate-200">
+        <%= h < 24 ? h + 'h' : (h / 24) + 'd' %>
+      </button>
+    <% }); %>
+  </div>
+
+  <!-- Charts Container (HTMX-replaced) -->
+  <div id="charts-container">
+    <div
+      hx-get="/projects/<%= resource.project.id %>/resources/<%= resource.id %>/metrics?hours=24"
+      hx-trigger="load"
+      hx-target="#charts-container"
+      hx-indicator=".htmx-indicator"
+      class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 animate-pulse h-64"></div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 animate-pulse h-64"></div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 animate-pulse h-64"></div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 animate-pulse h-64"></div>
+    </div>
+  </div>
+</div>

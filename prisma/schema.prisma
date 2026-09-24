@@ -1,0 +1,209 @@
+// prisma/schema.prisma
+// AWS Infrastructure Monitor — Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── RBAC ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  lastLoginAt  DateTime? @map("last_login_at")
+
+  roleId String @map("role_id")
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  users           User[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g. "projects:read", "projects:write", "reports:generate"
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ─── Projects ─────────────────────────────────────────────────────────────────
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  awsAccountId String? @map("aws_account_id") // for multi-account setups
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  resources AWSResource[]
+
+  @@map("projects")
+}
+
+// ─── AWS Resources ────────────────────────────────────────────────────────────
+
+enum ResourceType {
+  EC2_INSTANCE
+  RDS_INSTANCE
+  ELASTICACHE_CLUSTER
+  ELB
+  LAMBDA_FUNCTION
+  ECS_SERVICE
+}
+
+model AWSResource {
+  id           String       @id @default(uuid())
+  projectId    String       @map("project_id")
+  awsResourceId String      @map("aws_resource_id") // e.g. "i-0abc123def456789"
+  resourceType ResourceType @map("resource_type")
+  region       String
+  name         String
+  description  String?
+  active       Boolean      @default(true)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  metricSnapshots MetricSnapshot[]
+
+  @@unique([projectId, awsResourceId, region])
+  @@index([projectId])
+  @@map("aws_resources")
+}
+
+// ─── Metrics ──────────────────────────────────────────────────────────────────
+
+enum MetricCollectionStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+model MetricSnapshot {
+  id         String   @id @default(uuid())
+  resourceId String   @map("resource_id")
+  timestamp  DateTime
+
+  // CPU
+  cpuUtilization Float? @map("cpu_utilization") // percentage 0-100
+
+  // Memory — requires CloudWatch Agent on the instance
+  memoryUtilization Float? @map("memory_utilization") // percentage 0-100
+  memoryUsedBytes   BigInt? @map("memory_used_bytes")
+
+  // Disk — requires CloudWatch Agent on the instance
+  diskUtilization Float? @map("disk_utilization") // percentage 0-100
+  diskUsedBytes   BigInt? @map("disk_used_bytes")
+  diskPath        String? @map("disk_path") @default("/") // filesystem path
+
+  // Network (bytes)
+  networkInBytes  BigInt? @map("network_in_bytes")
+  networkOutBytes BigInt? @map("network_out_bytes")
+
+  // Status
+  collectionStatus MetricCollectionStatus @default(SUCCESS) @map("collection_status")
+  errorMessage     String? @map("error_message") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  resource AWSResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  // Composite unique to prevent duplicate collection for the same resource+timestamp
+  @@unique([resourceId, timestamp])
+  // Performance index for time-range queries
+  @@index([resourceId, timestamp])
+  @@index([timestamp])
+  @@map("metric_snapshots")
+}
+
+// ─── Reports ──────────────────────────────────────────────────────────────────
+
+enum ReportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Report {
+  id          String       @id @default(uuid())
+  name        String
+  requestedBy String       @map("requested_by")
+  status      ReportStatus @default(PENDING)
+
+  // Report parameters (stored as JSON)
+  parameters  Json
+
+  filePath    String? @map("file_path")
+  errorMessage String? @map("error_message") @db.Text
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  completedAt DateTime? @map("completed_at")
+
+  @@index([requestedBy])
+  @@index([status])
+  @@map("reports")
+}
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String   // e.g. "user.login", "project.create"
+  target    String?  // entity type
+  targetId  String?  @map("target_id")
+  metadata  Json?
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent") @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

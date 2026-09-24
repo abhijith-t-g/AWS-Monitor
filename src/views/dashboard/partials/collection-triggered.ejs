@@ -1,0 +1,6 @@
+<!-- Dashboard collection trigger response partial -->
+<% if (typeof jobId !== 'undefined' && jobId) { %>
+  <span class="text-emerald-400">⚡ Collection job queued (ID: <%= jobId.slice(0, 8) %>...)</span>
+<% } else { %>
+  <span class="text-amber-400">Collection triggered (no job ID returned)</span>
+<% } %>

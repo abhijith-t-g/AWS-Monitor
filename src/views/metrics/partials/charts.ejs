@@ -1,0 +1,127 @@
+<!-- Metric Charts Partial (HTMX response) -->
+<% const data = JSON.parse(chartData); %>
+
+<script>
+(function() {
+  const CHART_DATA = <%- chartData %>;
+  const LABELS = CHART_DATA.labels.map(l => new Date(l).toLocaleTimeString());
+
+  const chartDefaults = {
+    type: 'line',
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 400 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e293b',
+          borderColor: '#334155',
+          borderWidth: 1,
+          titleColor: '#94a3b8',
+          bodyColor: '#e2e8f0',
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#64748b', maxTicksLimit: 8, font: { size: 11 } },
+          grid: { color: '#1e293b' }
+        },
+        y: {
+          ticks: { color: '#64748b', font: { size: 11 } },
+          grid: { color: '#1e293b' }
+        }
+      },
+      elements: {
+        point: { radius: 0, hoverRadius: 4 },
+        line: { borderWidth: 2, tension: 0.3 }
+      }
+    }
+  };
+
+  function createChart(canvasId, label, data, color, unit) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    new Chart(ctx, {
+      ...chartDefaults,
+      data: {
+        labels: LABELS,
+        datasets: [{
+          label,
+          data,
+          borderColor: color,
+          backgroundColor: color + '15',
+          fill: true,
+        }]
+      },
+      options: {
+        ...chartDefaults.options,
+        scales: {
+          ...chartDefaults.options.scales,
+          y: {
+            ...chartDefaults.options.scales.y,
+            ticks: {
+              ...chartDefaults.options.scales.y.ticks,
+              callback: v => v + unit
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Wait for Chart.js to be loaded
+  if (typeof Chart !== 'undefined') {
+    createChart('cpu-chart', 'CPU Utilization', CHART_DATA.cpu, '#3b82f6', '%');
+    createChart('memory-chart', 'Memory Utilization', CHART_DATA.memory, '#8b5cf6', '%');
+    createChart('disk-chart', 'Disk Utilization', CHART_DATA.disk, '#f59e0b', '%');
+    createChart('network-chart', 'Network In', CHART_DATA.networkIn, '#10b981', ' MB');
+  }
+})();
+</script>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  <!-- CPU -->
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h4 class="text-sm font-semibold text-slate-200">CPU Utilization</h4>
+      <span class="text-xs text-slate-500">% over <%= hours %>h</span>
+    </div>
+    <div class="h-48">
+      <canvas id="cpu-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- Memory -->
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h4 class="text-sm font-semibold text-slate-200">Memory Utilization</h4>
+      <span class="text-xs text-slate-500">Requires CloudWatch Agent</span>
+    </div>
+    <div class="h-48">
+      <canvas id="memory-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- Disk -->
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h4 class="text-sm font-semibold text-slate-200">Disk Utilization</h4>
+      <span class="text-xs text-slate-500">Requires CloudWatch Agent</span>
+    </div>
+    <div class="h-48">
+      <canvas id="disk-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- Network -->
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h4 class="text-sm font-semibold text-slate-200">Network In/Out</h4>
+      <span class="text-xs text-slate-500">MB transferred</span>
+    </div>
+    <div class="h-48">
+      <canvas id="network-chart"></canvas>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,101 @@
+version: '3.9'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: aws-monitor-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: aws_monitor
+      MYSQL_USER: monitor
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-monitorpassword}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: aws-monitor-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: development
+    container_name: aws-monitor-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: mysql://monitor:${MYSQL_PASSWORD:-monitorpassword}@mysql:3306/aws_monitor
+      REDIS_URL: redis://redis:6379
+      PORT: 3000
+      HOST: 0.0.0.0
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+      CSRF_SECRET: ${CSRF_SECRET:-dev-csrf-secret-change-in-production}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      LOG_LEVEL: debug
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - reports_storage:/app/storage/reports
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: development
+    container_name: aws-monitor-worker
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: mysql://monitor:${MYSQL_PASSWORD:-monitorpassword}@mysql:3306/aws_monitor
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      METRICS_CRON: "*/5 * * * *"
+      LOG_LEVEL: debug
+    command: ["node", "-r", "tsx/cjs", "src/server/worker.ts"]
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - reports_storage:/app/storage/reports
+
+volumes:
+  mysql_data:
+  redis_data:
+  reports_storage:

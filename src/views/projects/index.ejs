@@ -1,0 +1,39 @@
+<!-- Projects List -->
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-lg font-semibold text-slate-100">All Projects</h2>
+      <p class="text-sm text-slate-400 mt-0.5"><%= total %> project<%= total !== 1 ? 's' : '' %> found</p>
+    </div>
+    <a href="/projects/new"
+       class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-colors shadow-lg shadow-brand-900/30">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      New Project
+    </a>
+  </div>
+
+  <!-- Search Bar (HTMX) -->
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+    <input
+      type="search"
+      name="search"
+      placeholder="Search projects…"
+      value="<%= typeof search !== 'undefined' ? search : '' %>"
+      hx-get="/projects"
+      hx-target="#projects-table"
+      hx-push-url="true"
+      hx-trigger="input changed delay:300ms, search"
+      hx-indicator=".htmx-indicator"
+      class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100
+             placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+    >
+  </div>
+
+  <!-- Table -->
+  <div id="projects-table">
+    <%- include('./partials/table.ejs', { projects, total, page, totalPages, search }) %>
+  </div>
+</div>

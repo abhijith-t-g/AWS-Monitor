@@ -1,0 +1,33 @@
+<!-- Pagination partial -->
+<% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+<nav class="flex items-center justify-between mt-4" aria-label="Pagination">
+  <div class="text-sm text-slate-400">
+    Page <span class="font-medium text-slate-200"><%= page %></span> of
+    <span class="font-medium text-slate-200"><%= totalPages %></span>
+    (<span class="font-medium text-slate-200"><%= total %></span> total)
+  </div>
+  <div class="flex gap-1">
+    <% if (page > 1) { %>
+      <a href="?page=<%= page - 1 %>"
+         class="px-3 py-1.5 text-sm rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors border border-slate-700">
+        ← Prev
+      </a>
+    <% } %>
+    <% for (let p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) { %>
+      <a href="?page=<%= p %>"
+         class="px-3 py-1.5 text-sm rounded-lg transition-colors border
+                <%= p === page
+                  ? 'bg-brand-600 text-white border-brand-600'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-slate-700' %>">
+        <%= p %>
+      </a>
+    <% } %>
+    <% if (page < totalPages) { %>
+      <a href="?page=<%= page + 1 %>"
+         class="px-3 py-1.5 text-sm rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors border border-slate-700">
+        Next →
+      </a>
+    <% } %>
+  </div>
+</nav>
+<% } %>

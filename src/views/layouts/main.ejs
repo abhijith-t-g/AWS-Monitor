@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AWS Infrastructure Monitoring & Reporting Platform">
+  <title><%= typeof title !== 'undefined' ? title + ' — ' : '' %><%= appName %></title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS (CDN for development; use compiled CSS in production) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            },
+            slate: {
+              750: '#253347',
+              850: '#182233',
+              950: '#0d1626',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+
+  <style>
+    [x-cloak] { display: none !important; }
+    .htmx-indicator { opacity: 0; transition: opacity 200ms ease-in; }
+    .htmx-request .htmx-indicator { opacity: 1; }
+    .htmx-request.htmx-indicator { opacity: 1; }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #1e2d3d; }
+    ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
+  </style>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 font-sans">
+  <% if (typeof hideLayout !== 'undefined' && hideLayout) { %>
+    <div class="min-h-full flex items-center justify-center p-4">
+      <%- body %>
+    </div>
+  <% } else { %>
+    <div class="flex h-full">
+      <%- include('../partials/sidebar.ejs', { user: typeof user !== 'undefined' ? user : null }) %>
+
+      <div class="flex-1 flex flex-col min-h-0 overflow-auto">
+        <%- include('../partials/navbar.ejs', { title: typeof title !== 'undefined' ? title : '' }) %>
+
+        <main class="flex-1 p-6 lg:p-8">
+          <%- include('../partials/flash-message.ejs') %>
+          <%- body %>
+        </main>
+
+        <footer class="border-t border-slate-800 px-8 py-3 text-center text-xs text-slate-500">
+          <%= appName %> &mdash; Internal Infrastructure Monitoring
+        </footer>
+      </div>
+    </div>
+  <% } %>
+</body>
+</html>

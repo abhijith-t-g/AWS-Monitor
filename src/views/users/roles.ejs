@@ -1,0 +1,28 @@
+<!-- Roles & Permissions page -->
+<div class="space-y-6">
+  <h2 class="text-lg font-semibold text-slate-100">Roles & Permissions</h2>
+
+  <div class="grid grid-cols-1 gap-4">
+    <% roles.forEach(function(role) { %>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-base font-semibold text-slate-100 capitalize"><%= role.name %></h3>
+            <% if (role.description) { %>
+              <p class="text-sm text-slate-400 mt-0.5"><%= role.description %></p>
+            <% } %>
+          </div>
+          <span class="text-sm text-slate-500"><%= role._count.users %> user<%= role._count.users !== 1 ? 's' : '' %></span>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <% role.rolePermissions.forEach(function(rp) { %>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-medium bg-brand-500/10 text-brand-400 border border-brand-500/20 font-mono">
+              <%= rp.permission.name %>
+            </span>
+          <% }); %>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+</div>

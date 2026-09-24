@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+storage/
+*.log
+*.xlsx
+coverage/
+.nyc_output/
