@@ -9,10 +9,7 @@ declare global {
 
 function createPrismaClient(): PrismaClient {
   return new PrismaClient({
-    log:
-      env.NODE_ENV === 'development'
-        ? ['query', 'info', 'warn', 'error']
-        : ['warn', 'error'],
+    log: ['warn', 'error'],
   });
 }
 
