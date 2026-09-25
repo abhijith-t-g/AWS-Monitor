@@ -14,16 +14,15 @@ import { logger } from '../../shared/logger';
 export async function scheduleMetricsCollection(): Promise<void> {
   const queue = getMetricsQueue();
 
-  await queue.add(
-    JOB_NAMES.COLLECT_ALL_METRICS,
-    { scheduledAt: new Date().toISOString() },
+  await queue.upsertJobScheduler(
+    'collect-all-metrics-recurring',
     {
-      repeat: {
-        pattern: env.METRICS_CRON, // default: */5 * * * *
-      },
-      jobId: 'collect-all-metrics-recurring',
-      removeOnComplete: true,
-    } as any,
+      pattern: env.METRICS_CRON, // default: */5 * * * *
+    },
+    {
+      name: JOB_NAMES.COLLECT_ALL_METRICS,
+      data: { scheduledAt: new Date().toISOString() },
+    },
   );
 
   logger.info({

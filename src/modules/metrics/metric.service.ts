@@ -78,14 +78,8 @@ export class MetricService {
   ): Promise<MetricCollectionStatus> {
     const metrics = await collectEC2Metrics(awsInstanceId, region, startTime, endTime);
 
-    // Determine collection status
+    // Determine collection status: as long as CPU is collected, mark SUCCESS
     const hasCore = metrics.cpuUtilization !== null;
-    const hasAll =
-      hasCore &&
-      metrics.networkIn !== null &&
-      metrics.networkOut !== null &&
-      metrics.memoryUtilization !== null &&
-      metrics.diskUtilization !== null;
 
     let status: MetricCollectionStatus;
     let errorMessage: string | null = null;
@@ -93,14 +87,6 @@ export class MetricService {
     if (!hasCore) {
       status = MetricCollectionStatus.FAILED;
       errorMessage = 'No CPU metrics returned from CloudWatch — instance may be stopped or metrics not publishing';
-    } else if (!hasAll) {
-      status = MetricCollectionStatus.PARTIAL;
-      const missing: string[] = [];
-      if (!metrics.memoryUtilization) missing.push('memory');
-      if (!metrics.diskUtilization) missing.push('disk');
-      if (missing.length > 0) {
-        errorMessage = `Partial metrics — ${missing.join(', ')} unavailable. CloudWatch Agent may not be installed/running.`;
-      }
     } else {
       status = MetricCollectionStatus.SUCCESS;
     }

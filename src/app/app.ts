@@ -26,15 +26,15 @@ export async function buildApp(): Promise<FastifyInstance> {
       level: env.LOG_LEVEL,
       ...(env.NODE_ENV !== 'production'
         ? {
-            transport: {
-              target: 'pino-pretty',
-              options: {
-                colorize: true,
-                translateTime: 'SYS:standard',
-                ignore: 'pid,hostname',
-              },
+          transport: {
+            target: 'pino-pretty',
+            options: {
+              colorize: true,
+              translateTime: 'SYS:standard',
+              ignore: 'pid,hostname',
             },
-          }
+          },
+        }
         : {}),
       redact: ['req.headers.authorization', 'req.headers.cookie'],
     },

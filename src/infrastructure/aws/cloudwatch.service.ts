@@ -112,7 +112,7 @@ export async function collectEC2Metrics(
   const ec2Dimensions = [{ Name: 'InstanceId', Value: instanceId }];
 
   // Run metric fetches concurrently and isolate failures
-  const [cpuResult, connResult, networkInResult, networkOutResult, memResult, diskResult] =
+  const [cpuResult, connResult, networkInResult, networkOutResult] =
     await Promise.allSettled([
       // CPU — primary metric
       getMetricStatistics({
@@ -157,31 +157,6 @@ export async function collectEC2Metrics(
         startTime,
         endTime,
       }),
-
-      // Memory — optional (CloudWatch Agent)
-      getMetricStatistics({
-        region,
-        namespace: CW_NAMESPACE_CW_AGENT,
-        metricName: 'mem_used_percent',
-        dimensions: ec2Dimensions,
-        statistics: ['Average'],
-        startTime,
-        endTime,
-      }),
-
-      // Disk — optional (CloudWatch Agent)
-      getMetricStatistics({
-        region,
-        namespace: CW_NAMESPACE_CW_AGENT,
-        metricName: 'disk_used_percent',
-        dimensions: [
-          ...ec2Dimensions,
-          { Name: 'path', Value: '/' },
-        ],
-        statistics: ['Average'],
-        startTime,
-        endTime,
-      }),
     ]);
 
   return {
@@ -189,7 +164,7 @@ export async function collectEC2Metrics(
     concurrentUsers: connResult.status === 'fulfilled' ? connResult.value : null,
     networkIn: networkInResult.status === 'fulfilled' ? networkInResult.value : null,
     networkOut: networkOutResult.status === 'fulfilled' ? networkOutResult.value : null,
-    memoryUtilization: memResult.status === 'fulfilled' ? memResult.value : null,
-    diskUtilization: diskResult.status === 'fulfilled' ? diskResult.value : null,
+    memoryUtilization: null,
+    diskUtilization: null,
   };
 }
