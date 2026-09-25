@@ -1,10 +1,9 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { requireAuth, requirePermission } from '../../middleware/auth.middleware';
+import { requireAuth, requirePermission, requireCsrf } from '../../middleware/auth.middleware';
 import { PERMISSIONS } from '../../config/constants';
 import { userService } from './user.service';
 import { createUserSchema, updateUserSchema } from './user.schema';
 import { prisma } from '../../infrastructure/database/prisma';
-import { ValidationError } from '../../shared/errors';
 
 export async function userRoutes(app: FastifyInstance): Promise<void> {
   const canRead = requirePermission(PERMISSIONS.USERS_READ);
@@ -37,7 +36,7 @@ export async function userRoutes(app: FastifyInstance): Promise<void> {
     });
   });
 
-  app.post('/users', { preHandler: [requireAuth, canWrite] }, async (request: FastifyRequest, reply: FastifyReply) => {
+  app.post('/users', { preHandler: [requireAuth, canWrite, requireCsrf] }, async (request: FastifyRequest, reply: FastifyReply) => {
     const parseResult = createUserSchema.safeParse(request.body);
     if (!parseResult.success) {
       const roles = await userService.listRoles();
@@ -79,11 +78,19 @@ export async function userRoutes(app: FastifyInstance): Promise<void> {
     });
   });
 
-  app.post('/users/:userId', { preHandler: [requireAuth, canWrite] }, async (request: FastifyRequest, reply: FastifyReply) => {
+  app.post('/users/:userId', { preHandler: [requireAuth, canWrite, requireCsrf] }, async (request: FastifyRequest, reply: FastifyReply) => {
     const { userId } = request.params as { userId: string };
     const parseResult = updateUserSchema.safeParse(request.body);
     if (!parseResult.success) {
-      throw new ValidationError('Invalid user data', parseResult.error.flatten().fieldErrors);
+      const editUser = await userService.getUser(userId);
+      const roles = await userService.listRoles();
+      return reply.status(400).view('users/form.ejs', {
+        title: `Edit ${editUser.name}`,
+        editUser,
+        roles,
+        errors: parseResult.error.flatten().fieldErrors,
+        user: request.user,
+      });
     }
 
     await userService.updateUser(userId, parseResult.data);

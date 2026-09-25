@@ -68,7 +68,7 @@ export class ProjectService {
     overviewSheet.addRow([]); // Blank line
 
     // Header styling
-    overviewSheet.mergeCells('A1:L1');
+    overviewSheet.mergeCells('A1:J1');
     const titleCell = overviewSheet.getCell('A1');
     titleCell.font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFF' } };
     titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1E3A8A' } };
@@ -83,10 +83,8 @@ export class ProjectService {
       'Avg CPU (%)',
       'Min CPU (%)',
       'Max CPU (%)',
-      'Avg Memory (%)',
-      'Avg Disk (%)',
-      'Total Net In (MB)',
-      'Total Net Out (MB)',
+      'Avg Concurrent Users',
+      'Peak Concurrent Users',
       'Snapshots Count',
     ];
 
@@ -115,17 +113,15 @@ export class ProjectService {
         aggregates.avgCpu != null ? Number(aggregates.avgCpu.toFixed(2)) : '—',
         aggregates.minCpu != null ? Number(aggregates.minCpu.toFixed(2)) : '—',
         aggregates.maxCpu != null ? Number(aggregates.maxCpu.toFixed(2)) : '—',
-        aggregates.avgMemory != null ? Number(aggregates.avgMemory.toFixed(2)) : '—',
-        aggregates.avgDisk != null ? Number(aggregates.avgDisk.toFixed(2)) : '—',
-        aggregates.totalNetworkIn != null ? Number((Number(aggregates.totalNetworkIn) / (1024 * 1024)).toFixed(2)) : '—',
-        aggregates.totalNetworkOut != null ? Number((Number(aggregates.totalNetworkOut) / (1024 * 1024)).toFixed(2)) : '—',
+        aggregates.avgConcurrentUsers != null ? Math.round(aggregates.avgConcurrentUsers) : '—',
+        aggregates.maxConcurrentUsers != null ? aggregates.maxConcurrentUsers : '—',
         aggregates.snapshotCount,
       ]);
       row.alignment = { vertical: 'middle' };
     }
 
     overviewSheet.columns.forEach((col) => {
-      col.width = 18;
+      col.width = 20;
     });
     if (overviewSheet.getColumn(1)) overviewSheet.getColumn(1).width = 24;
     if (overviewSheet.getColumn(2)) overviewSheet.getColumn(2).width = 26;
@@ -137,11 +133,8 @@ export class ProjectService {
       'Resource Name',
       'AWS ID',
       'CPU Utilization (%)',
-      'Memory Utilization (%)',
-      'Disk Utilization (%)',
-      'Network In (MB)',
-      'Network Out (MB)',
-      'DB Connections',
+      'Concurrent Users',
+      'Status',
     ];
     const dHeaderRow = detailSheet.addRow(detailHeaders);
     dHeaderRow.height = 24;
@@ -159,17 +152,14 @@ export class ProjectService {
           resource.name,
           resource.awsResourceId,
           s.cpuUtilization != null ? Number(s.cpuUtilization.toFixed(2)) : '',
-          s.memoryUtilization != null ? Number(s.memoryUtilization.toFixed(2)) : '',
-          s.diskUtilization != null ? Number(s.diskUtilization.toFixed(2)) : '',
-          s.networkInBytes != null ? Number((Number(s.networkInBytes) / (1024 * 1024)).toFixed(2)) : '',
-          s.networkOutBytes != null ? Number((Number(s.networkOutBytes) / (1024 * 1024)).toFixed(2)) : '',
+          s.concurrentUsers != null ? s.concurrentUsers : '',
           s.collectionStatus,
         ]);
       }
     }
 
     detailSheet.columns.forEach((col) => {
-      col.width = 20;
+      col.width = 22;
     });
 
     const buffer = Buffer.from(await workbook.xlsx.writeBuffer());

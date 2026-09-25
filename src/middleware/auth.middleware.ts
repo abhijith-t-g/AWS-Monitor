@@ -34,6 +34,19 @@ export async function requireAuth(
 }
 
 /**
+ * Validates a redirect URL to prevent Open Redirect attacks.
+ * Only allows relative paths starting with a single '/' (not '//' or external schemas).
+ */
+export function getSafeRedirectUrl(target?: string, fallback = '/dashboard'): string {
+  if (!target || typeof target !== 'string') return fallback;
+  const trimmed = target.trim();
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//') || trimmed.includes('\\')) {
+    return fallback;
+  }
+  return trimmed;
+}
+
+/**
  * Higher-order function — returns a Fastify preHandler that checks
  * whether the authenticated user has ALL the specified permissions.
  */
@@ -52,3 +65,18 @@ export function requirePermission(...permissions: Permission[]) {
     }
   };
 }
+
+/**
+ * Validates CSRF token on mutating requests (POST, PUT, PATCH, DELETE).
+ */
+export async function requireCsrf(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  return new Promise((resolve, reject) => {
+    (request.server as any).csrfProtection(request, reply, (err: Error | undefined) => {
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+}
+
+
+

@@ -13,6 +13,7 @@
     <h2 class="text-lg font-semibold text-slate-100 mb-6">Generate Report</h2>
 
     <form method="POST" action="/reports">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
       <div class="space-y-6">
 
         <!-- Report Name -->
@@ -140,7 +141,7 @@
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-3">Include Metrics <span class="text-red-400">*</span></label>
           <div class="grid grid-cols-2 gap-2">
-            <% [['cpu', 'CPU Utilization'], ['memory', 'Memory Utilization'], ['disk', 'Disk Utilization'], ['network', 'Network In/Out']].forEach(function(m) { %>
+            <% [['cpu', 'CPU Utilization (%)'], ['concurrentUsers', 'Concurrent Users (Active Sessions)'], ['memory', 'Memory Utilization (%)'], ['disk', 'Disk Utilization (%)'], ['network', 'Network In/Out']].forEach(function(m) { %>
               <label class="flex items-center gap-3 bg-slate-800 border border-slate-700 rounded-xl p-3 cursor-pointer hover:border-slate-600 transition-colors">
                 <input type="checkbox" name="includeMetrics" value="<%= m[0] %>" checked
                        class="w-4 h-4 rounded border-slate-600 text-brand-600 bg-slate-700 focus:ring-brand-500">

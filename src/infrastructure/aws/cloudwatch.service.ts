@@ -92,17 +92,16 @@ async function getMetricStatistics(params: GetMetricParams): Promise<MetricResul
 
 export interface EC2Metrics {
   cpuUtilization: MetricResult | null;
+  concurrentUsers: MetricResult | null;
   networkIn: MetricResult | null;
   networkOut: MetricResult | null;
-  // Memory and disk require CloudWatch Agent — may be null
   memoryUtilization: MetricResult | null;
   diskUtilization: MetricResult | null;
 }
 
 /**
- * Collect all available metrics for an EC2 instance.
- * CPU and Network come from the built-in AWS/EC2 namespace.
- * Memory and Disk require the CloudWatch Agent (CWAgent namespace).
+ * Collect all available metrics for an EC2 instance / AWS resource.
+ * Focuses on CPU Utilization and Concurrent Users / Active Sessions.
  */
 export async function collectEC2Metrics(
   instanceId: string,
@@ -112,10 +111,10 @@ export async function collectEC2Metrics(
 ): Promise<EC2Metrics> {
   const ec2Dimensions = [{ Name: 'InstanceId', Value: instanceId }];
 
-  // Run all metric fetches concurrently but isolate failures
-  const [cpuResult, networkInResult, networkOutResult, memResult, diskResult] =
+  // Run metric fetches concurrently and isolate failures
+  const [cpuResult, connResult, networkInResult, networkOutResult, memResult, diskResult] =
     await Promise.allSettled([
-      // CPU — always available for EC2
+      // CPU — primary metric
       getMetricStatistics({
         region,
         namespace: CW_NAMESPACE_EC2,
@@ -126,7 +125,18 @@ export async function collectEC2Metrics(
         endTime,
       }),
 
-      // Network In — always available for EC2
+      // Concurrent Users / Active Connections
+      getMetricStatistics({
+        region,
+        namespace: CW_NAMESPACE_EC2,
+        metricName: 'ActiveConnectionCount',
+        dimensions: ec2Dimensions,
+        statistics: ['Average', 'Maximum'],
+        startTime,
+        endTime,
+      }),
+
+      // Network In
       getMetricStatistics({
         region,
         namespace: CW_NAMESPACE_EC2,
@@ -137,7 +147,7 @@ export async function collectEC2Metrics(
         endTime,
       }),
 
-      // Network Out — always available for EC2
+      // Network Out
       getMetricStatistics({
         region,
         namespace: CW_NAMESPACE_EC2,
@@ -148,7 +158,7 @@ export async function collectEC2Metrics(
         endTime,
       }),
 
-      // Memory — requires CloudWatch Agent
+      // Memory — optional (CloudWatch Agent)
       getMetricStatistics({
         region,
         namespace: CW_NAMESPACE_CW_AGENT,
@@ -159,7 +169,7 @@ export async function collectEC2Metrics(
         endTime,
       }),
 
-      // Disk — requires CloudWatch Agent. "/" is the default path.
+      // Disk — optional (CloudWatch Agent)
       getMetricStatistics({
         region,
         namespace: CW_NAMESPACE_CW_AGENT,
@@ -167,8 +177,6 @@ export async function collectEC2Metrics(
         dimensions: [
           ...ec2Dimensions,
           { Name: 'path', Value: '/' },
-          { Name: 'fstype', Value: 'xfs' }, // adjust if instance uses ext4 etc.
-          { Name: 'device', Value: 'xvda1' },
         ],
         statistics: ['Average'],
         startTime,
@@ -178,6 +186,7 @@ export async function collectEC2Metrics(
 
   return {
     cpuUtilization: cpuResult.status === 'fulfilled' ? cpuResult.value : null,
+    concurrentUsers: connResult.status === 'fulfilled' ? connResult.value : null,
     networkIn: networkInResult.status === 'fulfilled' ? networkInResult.value : null,
     networkOut: networkOutResult.status === 'fulfilled' ? networkOutResult.value : null,
     memoryUtilization: memResult.status === 'fulfilled' ? memResult.value : null,

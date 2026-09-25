@@ -38,7 +38,7 @@ export class AuthService {
 
     // Use constant-time comparison even when user does not exist (timing attack mitigation)
     const dummyHash =
-      '$argon2id$v=19$m=65536,t=3,p=2$placeholder$placeholder';
+      '$argon2id$v=19$m=65536,t=3,p=2$FF4VnOyBP5uPSwkX5Pig/Q$y/KteeKFodavuaYJMvupU++7w1zOsg7lXhtKRnQUoQY';
     const hashToVerify = user ? user.passwordHash : dummyHash;
 
     let valid = false;

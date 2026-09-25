@@ -128,6 +128,9 @@ model MetricSnapshot {
   // CPU
   cpuUtilization Float? @map("cpu_utilization") // percentage 0-100
 
+  // Concurrent Users / Active Sessions
+  concurrentUsers Int? @map("concurrent_users")
+
   // Memory — requires CloudWatch Agent on the instance
   memoryUtilization Float? @map("memory_utilization") // percentage 0-100
   memoryUsedBytes   BigInt? @map("memory_used_bytes")

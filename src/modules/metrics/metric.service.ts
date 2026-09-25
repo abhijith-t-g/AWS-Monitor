@@ -109,6 +109,7 @@ export class MetricService {
       resourceId: dbResourceId,
       timestamp: snapshotTimestamp,
       cpuUtilization: metrics.cpuUtilization?.average ?? null,
+      concurrentUsers: metrics.concurrentUsers?.average ?? metrics.concurrentUsers?.maximum ?? null,
       memoryUtilization: metrics.memoryUtilization?.average ?? null,
       diskUtilization: metrics.diskUtilization?.average ?? null,
       networkInBytes: metrics.networkIn?.sum != null ? BigInt(Math.round(metrics.networkIn.sum)) : null,
@@ -123,6 +124,7 @@ export class MetricService {
       awsInstanceId,
       status,
       cpuAvg: metrics.cpuUtilization?.average?.toFixed(2),
+      concurrentUsers: metrics.concurrentUsers?.average,
     });
 
     return status;

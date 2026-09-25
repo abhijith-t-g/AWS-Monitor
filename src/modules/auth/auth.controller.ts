@@ -2,7 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { authService } from './auth.service';
 import { loginSchema, changePasswordSchema } from './auth.schema';
 import { prisma } from '../../infrastructure/database/prisma';
-import { requireAuth } from '../../middleware/auth.middleware';
+import { getSafeRedirectUrl } from '../../middleware/auth.middleware';
 import { ValidationError } from '../../shared/errors';
 
 const COOKIE_NAME = 'auth_token';
@@ -28,21 +28,26 @@ export class AuthController {
     }
 
     const query = request.query as Record<string, string>;
+    const safeRedirect = getSafeRedirectUrl(query['redirect']);
+
     return reply.view('auth/login.ejs', {
       title: 'Sign In',
       error: null,
-      redirect: query['redirect'] ?? '/dashboard',
+      redirect: safeRedirect,
       hideLayout: true,
     });
   }
 
   async handleLogin(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
     const parseResult = loginSchema.safeParse(request.body);
+    const bodyRedirect = (request.body as Record<string, string>)?.['redirect'];
+    const safeRedirect = getSafeRedirectUrl(bodyRedirect);
+
     if (!parseResult.success) {
       return reply.status(400).view('auth/login.ejs', {
         title: 'Sign In',
         error: 'Invalid email or password format',
-        redirect: '/dashboard',
+        redirect: safeRedirect,
         hideLayout: true,
       });
     }
@@ -63,14 +68,14 @@ export class AuthController {
 
       return reply
         .cookie(COOKIE_NAME, token, COOKIE_OPTIONS)
-        .redirect((request.body as Record<string, string>)['redirect'] ?? '/dashboard');
+        .redirect(safeRedirect);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Login failed';
       return reply.status(401).view('auth/login.ejs', {
         title: 'Sign In',
         error: message,
-        redirect: '/dashboard',
+        redirect: safeRedirect,
         hideLayout: true,
       });
     }
@@ -92,7 +97,6 @@ export class AuthController {
   }
 
   async showChangePassword(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
-    await requireAuth(request, reply);
     return reply.view('auth/change-password.ejs', {
       title: 'Change Password',
       error: null,
@@ -101,8 +105,6 @@ export class AuthController {
   }
 
   async handleChangePassword(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
-    await requireAuth(request, reply);
-
     const parseResult = changePasswordSchema.safeParse(request.body);
     if (!parseResult.success) {
       const errors = parseResult.error.flatten().fieldErrors;
@@ -144,3 +146,4 @@ export class AuthController {
 }
 
 export const authController = new AuthController();
+

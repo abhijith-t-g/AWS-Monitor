@@ -71,8 +71,7 @@ export class DashboardController {
     });
   }
 
-  async triggerCollection(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
-    await requirePermission(PERMISSIONS.SYSTEM_VIEW)(request, reply);
+  async triggerCollection(_request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
     const jobId = await triggerImmediateCollection();
     return reply.view('dashboard/partials/collection-triggered.ejs', { jobId });
   }

@@ -164,10 +164,8 @@
               <th class="px-4 py-3.5">Type</th>
               <th class="px-4 py-3.5">Region</th>
               <th class="px-4 py-3.5">Health State</th>
-              <th class="px-4 py-3.5">Latest CPU</th>
-              <th class="px-4 py-3.5">Latest Memory</th>
-              <th class="px-4 py-3.5">Latest Disk</th>
-              <th class="px-4 py-3.5">Network In/Out</th>
+              <th class="px-4 py-3.5">CPU Utilization</th>
+              <th class="px-4 py-3.5">Concurrent Users</th>
               <th class="px-4 py-3.5 text-center">Snapshots</th>
               <th class="px-6 py-3.5 text-right">Actions</th>
             </tr>
@@ -177,10 +175,7 @@
               <%
                 const latestSnap = resource.metricSnapshots && resource.metricSnapshots.length > 0 ? resource.metricSnapshots[0] : null;
                 const cpuVal = latestSnap && latestSnap.cpuUtilization !== null ? latestSnap.cpuUtilization.toFixed(1) : null;
-                const memVal = latestSnap && latestSnap.memoryUtilization !== null ? latestSnap.memoryUtilization.toFixed(1) : null;
-                const diskVal = latestSnap && latestSnap.diskUtilization !== null ? latestSnap.diskUtilization.toFixed(1) : null;
-                const netInMb = latestSnap && latestSnap.networkInBytes !== null ? (Number(latestSnap.networkInBytes) / (1024*1024)).toFixed(2) : null;
-                const netOutMb = latestSnap && latestSnap.networkOutBytes !== null ? (Number(latestSnap.networkOutBytes) / (1024*1024)).toFixed(2) : null;
+                const usersVal = latestSnap && latestSnap.concurrentUsers !== null ? latestSnap.concurrentUsers : null;
 
                 const isCrit = cpuVal !== null && Number(cpuVal) >= 85;
                 const isWarn = cpuVal !== null && Number(cpuVal) >= 70 && Number(cpuVal) < 85;
@@ -236,7 +231,7 @@
                   <% if (cpuVal !== null) { %>
                     <div class="flex items-center gap-2">
                       <span class="font-bold <%= isCrit ? 'text-red-400' : (isWarn ? 'text-amber-400' : 'text-slate-200') %>"><%= cpuVal %>%</span>
-                      <div class="w-10 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                      <div class="w-12 h-1.5 rounded-full bg-slate-800 overflow-hidden">
                         <div class="h-full <%= isCrit ? 'bg-red-500' : (isWarn ? 'bg-amber-500' : 'bg-blue-500') %>" :style="'width: <%= widthPercent %>%'"></div>
                       </div>
                     </div>
@@ -245,21 +240,15 @@
                   <% } %>
                 </td>
 
-                <!-- Latest Memory -->
-                <td class="px-4 py-4 font-mono">
-                  <%= memVal !== null ? memVal + '%' : '<span class="text-slate-600">—</span>' %>
-                </td>
-
-                <!-- Latest Disk -->
-                <td class="px-4 py-4 font-mono">
-                  <%= diskVal !== null ? diskVal + '%' : '<span class="text-slate-600">—</span>' %>
-                </td>
-
-                <!-- Network -->
-                <td class="px-4 py-4 font-mono text-[11px]">
-                  <% if (netInMb !== null && netOutMb !== null) { %>
-                    <div>↓ <%= netInMb %> MB</div>
-                    <div class="text-slate-500">↑ <%= netOutMb %> MB</div>
+                <!-- Concurrent Users -->
+                <td class="px-4 py-4 font-mono text-xs">
+                  <% if (usersVal !== null) { %>
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-950/50 border border-indigo-800/40 text-indigo-300 font-semibold">
+                      <svg class="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                      <%= usersVal %> users
+                    </span>
                   <% } else { %>
                     <span class="text-slate-600">—</span>
                   <% } %>

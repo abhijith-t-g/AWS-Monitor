@@ -2,6 +2,7 @@ import Fastify, { FastifyInstance } from 'fastify';
 import path from 'path';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyCookie from '@fastify/cookie';
+import fastifyCsrf from '@fastify/csrf-protection';
 import fastifyFormbody from '@fastify/formbody';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyRateLimit from '@fastify/rate-limit';
@@ -95,11 +96,40 @@ async function registerPlugins(app: FastifyInstance): Promise<void> {
     crossOriginEmbedderPolicy: false,
   });
 
-  // Cookie support (for JWT HttpOnly cookie)
-  await app.register(fastifyCookie);
+  // Cookie support (for JWT and CSRF HttpOnly cookies)
+  await app.register(fastifyCookie, {
+    secret: env.CSRF_SECRET,
+  });
 
   // Form body parsing (application/x-www-form-urlencoded for HTML forms)
   await app.register(fastifyFormbody);
+
+  // CSRF Protection
+  await app.register(fastifyCsrf, {
+    sessionPlugin: '@fastify/cookie',
+    cookieOpts: {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: env.NODE_ENV === 'production',
+      signed: true,
+    },
+  });
+
+  // Automatically make csrfToken available to all rendered views
+  app.addHook('preHandler', async (request, reply) => {
+    if (request.method === 'GET' || request.method === 'HEAD') {
+      try {
+        const token = reply.generateCsrf();
+        (reply as any).locals = {
+          ...((reply as any).locals || {}),
+          csrfToken: token,
+        };
+      } catch {
+        // Ignore if CSRF cannot be generated on certain asset requests
+      }
+    }
+  });
 
   // Multipart form support (for file uploads if needed)
   await app.register(fastifyMultipart, {

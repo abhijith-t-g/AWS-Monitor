@@ -28,6 +28,7 @@
     <% } %>
 
     <form method="POST" action="/auth/login" x-data="{ loading: false }" @submit="loading = true">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
       <input type="hidden" name="redirect" value="<%= redirect %>">
 
       <div class="space-y-5">

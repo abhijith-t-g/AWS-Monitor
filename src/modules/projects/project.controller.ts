@@ -167,8 +167,22 @@ export class ProjectController {
     const defaultEnd = new Date();
     const defaultStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const startDate = query['startDate'] ? new Date(query['startDate']) : defaultStart;
-    const endDate = query['endDate'] ? new Date(query['endDate']) : defaultEnd;
+    let startDate = defaultStart;
+    let endDate = defaultEnd;
+
+    if (query['startDate']) {
+      const parsedStart = new Date(query['startDate']);
+      if (!isNaN(parsedStart.getTime())) startDate = parsedStart;
+    }
+
+    if (query['endDate']) {
+      const parsedEnd = new Date(query['endDate']);
+      if (!isNaN(parsedEnd.getTime())) endDate = parsedEnd;
+    }
+
+    if (endDate <= startDate) {
+      throw new ValidationError('End date must be after start date');
+    }
 
     const { buffer, filename } = await projectService.exportProjectExcel(
       paramsResult.data.projectId,

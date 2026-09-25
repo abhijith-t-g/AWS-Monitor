@@ -42,6 +42,8 @@
     }
   </script>
 
+  <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+
   <!-- Flatpickr (Modern dark calendar date picker) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
@@ -49,6 +51,14 @@
 
   <!-- HTMX -->
   <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+  <script>
+    document.addEventListener('htmx:configRequest', function(event) {
+      const meta = document.querySelector('meta[name="csrf-token"]');
+      if (meta && meta.content) {
+        event.detail.headers['x-csrf-token'] = meta.content;
+      }
+    });
+  </script>
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <!-- Chart.js -->

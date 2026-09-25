@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { projectController } from './project.controller';
-import { requireAuth, requirePermission } from '../../middleware/auth.middleware';
+import { requireAuth, requirePermission, requireCsrf } from '../../middleware/auth.middleware';
 import { PERMISSIONS } from '../../config/constants';
 
 export async function projectRoutes(app: FastifyInstance): Promise<void> {
@@ -22,7 +22,7 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
 
   app.post(
     '/projects',
-    { preHandler: [requireAuth, canWrite] },
+    { preHandler: [requireAuth, canWrite, requireCsrf] },
     projectController.createProject.bind(projectController),
   );
 
@@ -46,13 +46,13 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
 
   app.post(
     '/projects/:projectId',
-    { preHandler: [requireAuth, canWrite] },
+    { preHandler: [requireAuth, canWrite, requireCsrf] },
     projectController.updateProject.bind(projectController),
   );
 
   app.delete(
     '/projects/:projectId',
-    { preHandler: [requireAuth, canDelete] },
+    { preHandler: [requireAuth, canDelete, requireCsrf] },
     projectController.deleteProject.bind(projectController),
   );
 }

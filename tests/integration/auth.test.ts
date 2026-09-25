@@ -29,11 +29,32 @@ describe('Auth routes', () => {
     expect(response.body).toContain('Sign In');
   });
 
-  it('POST /auth/login with invalid credentials returns 401', async () => {
+  it('POST /auth/login without CSRF token returns 403', async () => {
     const response = await app.inject({
       method: 'POST',
       url: '/auth/login',
       payload: 'email=wrong%40test.com&password=wrongpassword',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    });
+    expect(response.statusCode).toBe(403);
+  });
+
+  it('POST /auth/login with invalid credentials returns 401 when CSRF token is provided', async () => {
+    const getRes = await app.inject({
+      method: 'GET',
+      url: '/auth/login',
+    });
+    expect(getRes.statusCode).toBe(200);
+
+    const cookies = getRes.cookies;
+    const csrfMatch = getRes.body.match(/name="_csrf" value="([^"]+)"/);
+    const csrfToken = csrfMatch ? csrfMatch[1] : '';
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      cookies: cookies.reduce((acc, c) => ({ ...acc, [c.name]: c.value }), {}),
+      payload: `_csrf=${encodeURIComponent(csrfToken)}&email=wrong%40test.com&password=wrongpassword`,
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
     });
     expect(response.statusCode).toBe(401);

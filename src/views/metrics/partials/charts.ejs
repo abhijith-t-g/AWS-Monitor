@@ -8,7 +8,7 @@
 <script>
 (function() {
   const payloadEl = document.getElementById('chart-payload');
-  const CHART_DATA = payloadEl ? JSON.parse(payloadEl.textContent || '{}') : { labels: [], cpu: [], memory: [], disk: [], networkIn: [] };
+  const CHART_DATA = payloadEl ? JSON.parse(payloadEl.textContent || '{}') : { labels: [], cpu: [], concurrentUsers: [] };
   const LABELS = (CHART_DATA.labels || []).map(function(l) {
     const d = new Date(l);
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -80,19 +80,17 @@
     });
   }
 
-  // Wait for Chart.js to be loaded
+  // Render Charts
   if (typeof Chart !== 'undefined') {
     createChart('cpu-chart', 'CPU Utilization', CHART_DATA.cpu, '#3b82f6', '%');
-    createChart('memory-chart', 'Memory Utilization', CHART_DATA.memory, '#8b5cf6', '%');
-    createChart('disk-chart', 'Disk Utilization', CHART_DATA.disk, '#f59e0b', '%');
-    createChart('network-chart', 'Network In', CHART_DATA.networkIn, '#10b981', ' MB');
+    createChart('users-chart', 'Concurrent Users', CHART_DATA.concurrentUsers, '#8b5cf6', ' users');
   }
 })();
 </script>
 
 <div class="space-y-4" x-data="{ viewMode: 'charts', search: '' }">
   <!-- View Toggle Header -->
-  <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-slate-800 gap-3">
     <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 p-1 rounded-xl">
       <button
         type="button"
@@ -102,7 +100,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
         </svg>
-        Visual Charts
+        Visual Telemetry
       </button>
 
       <button
@@ -119,11 +117,15 @@
 
     <!-- Quick Stats Summary -->
     <% 
-      const validCpus = data.cpu.filter(function(c) { return c !== null; });
+      const validCpus = (data.cpu || []).filter(function(c) { return c !== null && typeof c !== 'undefined'; });
       const avgCpu = validCpus.length ? (validCpus.reduce(function(a,b) { return a+b; }, 0) / validCpus.length).toFixed(1) : '—';
       const maxCpu = validCpus.length ? Math.max.apply(null, validCpus).toFixed(1) : '—';
+
+      const validUsers = (data.concurrentUsers || []).filter(function(u) { return u !== null && typeof u !== 'undefined'; });
+      const maxUsers = validUsers.length ? Math.max.apply(null, validUsers) : '—';
+      const latestUsers = validUsers.length ? validUsers[validUsers.length - 1] : '—';
     %>
-    <div class="hidden sm:flex items-center gap-4 text-xs">
+    <div class="flex flex-wrap items-center gap-4 text-xs">
       <div class="flex items-center gap-1.5 text-slate-400">
         <span class="w-2 h-2 rounded-full bg-blue-500"></span>
         Avg CPU: <span class="font-semibold text-slate-200"><%= avgCpu %>%</span>
@@ -132,12 +134,16 @@
         <span class="w-2 h-2 rounded-full bg-amber-500"></span>
         Peak CPU: <span class="font-semibold text-slate-200"><%= maxCpu %>%</span>
       </div>
+      <div class="flex items-center gap-1.5 text-slate-400">
+        <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+        Peak Users: <span class="font-semibold text-purple-300"><%= maxUsers %></span>
+      </div>
     </div>
   </div>
 
   <!-- VIEW 1: Charts Grid -->
   <div x-show="viewMode === 'charts'" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    <!-- CPU -->
+    <!-- CPU Utilization -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-2">
@@ -146,50 +152,22 @@
         </div>
         <span class="text-xs text-slate-500 font-medium">% over <%= hours %>h</span>
       </div>
-      <div class="h-48">
+      <div class="h-56">
         <canvas id="cpu-chart"></canvas>
       </div>
     </div>
 
-    <!-- Memory -->
+    <!-- Concurrent Users -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-2">
           <div class="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
-          <h4 class="text-sm font-semibold text-slate-200">Memory Utilization</h4>
+          <h4 class="text-sm font-semibold text-slate-200">Concurrent Users / Active Sessions</h4>
         </div>
-        <span class="text-xs text-slate-500 font-medium">CloudWatch Agent</span>
+        <span class="text-xs text-slate-500 font-medium">Active Users over <%= hours %>h</span>
       </div>
-      <div class="h-48">
-        <canvas id="memory-chart"></canvas>
-      </div>
-    </div>
-
-    <!-- Disk -->
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-2">
-          <div class="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
-          <h4 class="text-sm font-semibold text-slate-200">Disk Utilization</h4>
-        </div>
-        <span class="text-xs text-slate-500 font-medium">Disk usage %</span>
-      </div>
-      <div class="h-48">
-        <canvas id="disk-chart"></canvas>
-      </div>
-    </div>
-
-    <!-- Network -->
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-2">
-          <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-          <h4 class="text-sm font-semibold text-slate-200">Network Telemetry</h4>
-        </div>
-        <span class="text-xs text-slate-500 font-medium">MB transferred</span>
-      </div>
-      <div class="h-48">
-        <canvas id="network-chart"></canvas>
+      <div class="h-56">
+        <canvas id="users-chart"></canvas>
       </div>
     </div>
   </div>
@@ -199,81 +177,80 @@
     <div class="p-4 border-b border-slate-800 flex items-center justify-between gap-4">
       <div>
         <h4 class="text-sm font-semibold text-slate-200">Telemetry Snapshots</h4>
-        <p class="text-xs text-slate-500">Raw time-series data captured from AWS CloudWatch</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <input
-          type="text"
-          x-model="search"
-          placeholder="Filter timestamp / values..."
-          class="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 w-48">
+        <p class="text-xs text-slate-500">Historical date/time, CPU utilization, and concurrent user counts</p>
       </div>
     </div>
 
     <div class="overflow-x-auto max-h-96 overflow-y-auto">
       <table class="w-full text-left text-xs">
-        <thead class="bg-slate-950/80 sticky top-0 text-slate-400 font-semibold border-b border-slate-800">
+        <thead class="bg-slate-950/80 sticky top-0 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider">
           <tr>
-            <th class="px-4 py-3">Timestamp (Local)</th>
-            <th class="px-4 py-3">CPU Usage</th>
-            <th class="px-4 py-3">Memory Usage</th>
-            <th class="px-4 py-3">Disk Usage</th>
-            <th class="px-4 py-3">Network In</th>
-            <th class="px-4 py-3">Network Out</th>
-            <th class="px-4 py-3">DB Conn</th>
+            <th class="px-6 py-3.5">Date & Time (Local)</th>
+            <th class="px-6 py-3.5">CPU Usage (%)</th>
+            <th class="px-6 py-3.5">Concurrent Users</th>
+            <th class="px-6 py-3.5 text-right">Status</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-800 text-slate-300 font-mono">
           <% if (snaps.length === 0) { %>
             <tr>
-              <td colspan="7" class="px-4 py-8 text-center text-slate-500 font-sans">
+              <td colspan="4" class="px-6 py-8 text-center text-slate-500 font-sans">
                 No telemetry snapshots recorded in this timeframe. Make sure the background worker is running.
               </td>
             </tr>
           <% } else { %>
             <% snaps.forEach(function(s) { %>
               <%
-                const cpuVal = s.cpuUtilization !== null ? s.cpuUtilization.toFixed(1) : null;
-                const memVal = s.memoryUtilization !== null ? s.memoryUtilization.toFixed(1) : null;
-                const diskVal = s.diskUtilization !== null ? s.diskUtilization.toFixed(1) : null;
-                const netInMb = s.networkInBytes !== null ? (Number(s.networkInBytes) / (1024*1024)).toFixed(2) : null;
-                const netOutMb = s.networkOutBytes !== null ? (Number(s.networkOutBytes) / (1024*1024)).toFixed(2) : null;
+                const cpuVal = s.cpuUtilization !== null && typeof s.cpuUtilization !== 'undefined' ? s.cpuUtilization.toFixed(1) : null;
+                const usersVal = s.concurrentUsers !== null && typeof s.concurrentUsers !== 'undefined' ? s.concurrentUsers : null;
                 const isHigh = cpuVal !== null && Number(cpuVal) >= 80;
                 const isWarn = cpuVal !== null && Number(cpuVal) >= 60 && Number(cpuVal) < 80;
                 const widthPercent = cpuVal !== null ? Math.min(Number(cpuVal), 100) : 0;
               %>
               <tr class="hover:bg-slate-800/50 transition-colors">
-                <td class="px-4 py-2.5 text-slate-400 font-sans whitespace-nowrap">
-                  <%= new Date(s.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) %>
+                <td class="px-6 py-3 text-slate-400 font-sans whitespace-nowrap">
+                  <%= new Date(s.timestamp).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) %>
                 </td>
-                <td class="px-4 py-2.5 whitespace-nowrap">
+                <td class="px-6 py-3 whitespace-nowrap">
                   <% if (cpuVal !== null) { %>
                     <div class="flex items-center gap-2">
                       <span class="px-1.5 py-0.5 rounded text-[11px] font-bold <%= isHigh ? 'bg-red-900/40 text-red-400 border border-red-700/50' : (isWarn ? 'bg-amber-900/40 text-amber-400 border border-amber-700/50' : 'bg-emerald-900/30 text-emerald-400') %>">
                         <%= cpuVal %>%
                       </span>
-                      <div class="w-12 h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                        <div class="h-full <%= isHigh ? 'bg-red-500' : (isWarn ? 'bg-amber-500' : 'bg-blue-500') %>" :style="'width: <%= widthPercent %>%'"></div>
+                      <div class="w-16 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                        <div class="h-full <%= isHigh ? 'bg-red-500' : (isWarn ? 'bg-amber-500' : 'bg-blue-500') %>" :style="'width: <%= widthPercent %>;'"></div>
                       </div>
                     </div>
                   <% } else { %>
                     <span class="text-slate-600">—</span>
                   <% } %>
                 </td>
-                <td class="px-4 py-2.5 whitespace-nowrap">
-                  <%= memVal !== null ? memVal + '%' : '<span class="text-slate-600">—</span>' %>
+                <td class="px-6 py-3 whitespace-nowrap">
+                  <% if (usersVal !== null) { %>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-purple-950/50 border border-purple-800/40 text-purple-300 font-semibold text-xs font-mono">
+                      <%= usersVal %> active
+                    </span>
+                  <% } else { %>
+                    <span class="text-slate-600">—</span>
+                  <% } %>
                 </td>
-                <td class="px-4 py-2.5 whitespace-nowrap">
-                  <%= diskVal !== null ? diskVal + '%' : '<span class="text-slate-600">—</span>' %>
-                </td>
-                <td class="px-4 py-2.5 whitespace-nowrap">
-                  <%= netInMb !== null ? netInMb + ' MB' : '<span class="text-slate-600">—</span>' %>
-                </td>
-                <td class="px-4 py-2.5 whitespace-nowrap">
-                  <%= netOutMb !== null ? netOutMb + ' MB' : '<span class="text-slate-600">—</span>' %>
-                </td>
-                <td class="px-4 py-2.5 whitespace-nowrap">
-                  <%= s.databaseConnections !== null ? s.databaseConnections : '<span class="text-slate-600">—</span>' %>
+                <td class="px-6 py-3 text-right whitespace-nowrap font-sans">
+                  <% if (s.collectionStatus === 'SUCCESS') { %>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                      Success
+                    </span>
+                  <% } else if (s.collectionStatus === 'PARTIAL') { %>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-950/60 text-amber-400 border border-amber-800/40">
+                      <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                      Partial
+                    </span>
+                  <% } else { %>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-950/60 text-red-400 border border-red-800/40">
+                      <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                      Failed
+                    </span>
+                  <% } %>
                 </td>
               </tr>
             <% }); %>
@@ -283,3 +260,4 @@
     </div>
   </div>
 </div>
+

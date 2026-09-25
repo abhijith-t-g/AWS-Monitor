@@ -6,6 +6,7 @@
     </h2>
 
     <form method="POST" action="<%= project ? '/projects/' + project.id : '/projects' %>">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
       <div class="space-y-5">
 
         <div>

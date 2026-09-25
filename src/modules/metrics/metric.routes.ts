@@ -23,16 +23,12 @@ export async function metricRoutes(app: FastifyInstance): Promise<void> {
       const hours = Math.min(parseInt(query.hours ?? '24', 10), 720);
       const snapshots = await metricService.getMetricsForResource(params.resourceId, hours);
 
-      // Format for Chart.js
+      // Format for Chart.js focusing on CPU usage and concurrent users
       type Snap = (typeof snapshots)[number];
-      const toMB = (b: bigint | null) => b != null ? Number(b) / (1024 * 1024) : null;
       const chartData = {
         labels: snapshots.map((s: Snap) => s.timestamp.toISOString()),
         cpu: snapshots.map((s: Snap) => s.cpuUtilization),
-        memory: snapshots.map((s: Snap) => s.memoryUtilization),
-        disk: snapshots.map((s: Snap) => s.diskUtilization),
-        networkIn: snapshots.map((s: Snap) => toMB(s.networkInBytes)),
-        networkOut: snapshots.map((s: Snap) => toMB(s.networkOutBytes)),
+        concurrentUsers: snapshots.map((s: Snap) => s.concurrentUsers),
       };
 
       if (request.headers['hx-request']) {

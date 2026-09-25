@@ -35,11 +35,18 @@ export function registerErrorHandler(app: FastifyInstance): void {
       });
     }
 
-    // Fastify's built-in validation errors (JSON schema)
-    const fastifyError = error as { statusCode?: number; message?: string; validation?: unknown };
+    // Fastify's built-in validation or CSRF errors
+    const fastifyError = error as { statusCode?: number; code?: string; message?: string; validation?: unknown };
+    if (fastifyError.code === 'FST_CSRF_INVALID_TOKEN' || fastifyError.code === 'FST_CSRF_MISSING_SECRET') {
+      return reply.status(403).view('error.ejs', {
+        title: 'Security Verification Failed',
+        message: 'Invalid or missing CSRF security token. Please refresh the page and try again.',
+      });
+    }
+
     if (fastifyError.statusCode && fastifyError.statusCode < 500) {
       return reply.status(fastifyError.statusCode).view('error.ejs', {
-        title: 'Bad Request',
+        title: fastifyError.statusCode === 403 ? 'Forbidden' : 'Bad Request',
         message: fastifyError.message ?? 'Bad request',
       });
     }

@@ -6,6 +6,7 @@ export interface MetricSnapshotInput {
   resourceId: string;
   timestamp: Date;
   cpuUtilization?: number | null;
+  concurrentUsers?: number | null;
   memoryUtilization?: number | null;
   memoryUsedBytes?: bigint | null;
   diskUtilization?: number | null;
@@ -27,6 +28,7 @@ export class MetricRepository {
       resource: { connect: { id: data.resourceId } },
       timestamp: data.timestamp,
       cpuUtilization: data.cpuUtilization ?? null,
+      concurrentUsers: data.concurrentUsers != null ? Math.round(data.concurrentUsers) : null,
       memoryUtilization: data.memoryUtilization ?? null,
       memoryUsedBytes: data.memoryUsedBytes ?? null,
       diskUtilization: data.diskUtilization ?? null,
@@ -40,6 +42,7 @@ export class MetricRepository {
 
     const update: Prisma.MetricSnapshotUpdateInput = {
       cpuUtilization: data.cpuUtilization ?? null,
+      concurrentUsers: data.concurrentUsers != null ? Math.round(data.concurrentUsers) : null,
       memoryUtilization: data.memoryUtilization ?? null,
       memoryUsedBytes: data.memoryUsedBytes ?? null,
       diskUtilization: data.diskUtilization ?? null,
@@ -96,6 +99,9 @@ export class MetricRepository {
     avgCpu: number | null;
     minCpu: number | null;
     maxCpu: number | null;
+    avgConcurrentUsers: number | null;
+    maxConcurrentUsers: number | null;
+    minConcurrentUsers: number | null;
     avgMemory: number | null;
     avgDisk: number | null;
     totalNetworkIn: bigint | null;
@@ -108,9 +114,9 @@ export class MetricRepository {
         timestamp: { gte: startTime, lte: endTime },
         collectionStatus: { not: 'FAILED' },
       },
-      _avg: { cpuUtilization: true, memoryUtilization: true, diskUtilization: true },
-      _min: { cpuUtilization: true },
-      _max: { cpuUtilization: true },
+      _avg: { cpuUtilization: true, concurrentUsers: true, memoryUtilization: true, diskUtilization: true },
+      _min: { cpuUtilization: true, concurrentUsers: true },
+      _max: { cpuUtilization: true, concurrentUsers: true },
       _sum: { networkInBytes: true, networkOutBytes: true },
       _count: { id: true },
     });
@@ -119,6 +125,9 @@ export class MetricRepository {
       avgCpu: result._avg.cpuUtilization,
       minCpu: result._min.cpuUtilization,
       maxCpu: result._max.cpuUtilization,
+      avgConcurrentUsers: result._avg.concurrentUsers,
+      maxConcurrentUsers: result._max.concurrentUsers,
+      minConcurrentUsers: result._min.concurrentUsers,
       avgMemory: result._avg.memoryUtilization,
       avgDisk: result._avg.diskUtilization,
       totalNetworkIn: result._sum.networkInBytes,

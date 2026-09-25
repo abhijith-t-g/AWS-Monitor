@@ -4,6 +4,7 @@
     <h2 class="text-lg font-semibold text-slate-100 mb-6">Add AWS Resource</h2>
 
     <form method="POST" action="/projects/<%= projectId %>/resources">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
       <div class="space-y-5">
 
         <div>

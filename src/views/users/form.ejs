@@ -10,6 +10,7 @@
     <% } %>
 
     <form method="POST" action="<%= editUser ? '/users/' + editUser.id : '/users' %>">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
       <div class="space-y-5">
 
         <div>
